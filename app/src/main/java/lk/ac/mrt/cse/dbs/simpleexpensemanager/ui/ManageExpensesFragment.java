@@ -97,6 +97,10 @@ public class ManageExpensesFragment extends Fragment implements View.OnClickList
                 int month = datePicker.getMonth();
                 int year = datePicker.getYear();
 
+                if (selectedAccount.isEmpty()) {
+                    break;
+                }
+
                 if (amountStr.isEmpty()) {
                     amount.setError(getActivity().getString(R.string.err_amount_required));
                 }

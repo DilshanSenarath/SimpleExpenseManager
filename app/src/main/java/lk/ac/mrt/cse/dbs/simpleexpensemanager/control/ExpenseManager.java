@@ -28,6 +28,7 @@ import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.exception.InvalidAccountExcep
 import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.Account;
 import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.ExpenseType;
 import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.Transaction;
+import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.schema.SimpleExpenseManagerDbHelper;
 
 /**
  * The ExpenseManager acts as the mediator when performing transactions. This is an abstract class with an abstract
@@ -36,6 +37,8 @@ import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.Transaction;
 public abstract class ExpenseManager implements Serializable {
     private AccountDAO accountsHolder;
     private TransactionDAO transactionsHolder;
+
+    protected SimpleExpenseManagerDbHelper dbHelper;
 
     /***
      * Get list of account numbers as String.
@@ -133,4 +136,11 @@ public abstract class ExpenseManager implements Serializable {
      * objects will be initialized.
      */
     public abstract void setup() throws ExpenseManagerException;
+
+    /***
+     * Close the database connection
+     */
+    public void closeDBHelper(){
+        this.dbHelper.close();
+    }
 }
