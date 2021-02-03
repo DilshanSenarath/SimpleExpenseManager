@@ -23,24 +23,81 @@ public class DBTransactionDAO implements TransactionDAO {
 
     public DBTransactionDAO(SimpleExpenseManagerDbHelper dbHelper) {
         transactions = new LinkedList<>();
-
-        //Get transaction data from database and save it in linked list
         this.dbHelper = dbHelper;
+    }
+
+    @Override
+    public void logTransaction(Date date, String accountNo, ExpenseType expenseType, double amount) {
+        Transaction transaction = new Transaction(date, accountNo, expenseType, amount);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String strDate = dateFormat.format(date);
+
+        String strExpenseType;
+        if (expenseType == ExpenseType.EXPENSE){
+            strExpenseType = "expense";
+        }else{
+            strExpenseType = "income";
+        }
+
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        //create values for inserting
+        ContentValues values = new ContentValues();
+        values.put(SimpleExpenseManagerContract.Transaction.COLUMN_NAME_DATE, strDate);
+        values.put(SimpleExpenseManagerContract.Transaction.COLUMN_NAME_ACCOUNT_NO, accountNo);
+        values.put(SimpleExpenseManagerContract.Transaction.COLUMN_NAME_EXPENSE_TYPE, strExpenseType);
+        values.put(SimpleExpenseManagerContract.Transaction.COLUMN_NAME_AMOUNT, amount);
+
+        db.insert(SimpleExpenseManagerContract.Transaction.TABLE_NAME, null, values);
+    }
+
+    @Override
+    public List<Transaction> getAllTransactionLogs()  {
+        getTransactionLogs(0);
+        return transactions;
+    }
+
+    @Override
+    public List<Transaction> getPaginatedTransactionLogs(int limit) {
+        getTransactionLogs(limit);
+        return transactions;
+    }
+
+    public void getTransactionLogs(int limit){
+        transactions.clear();
 
         SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-        String[] selectionArg = {};
-        String t = "";
+        String sortOrder = SimpleExpenseManagerContract.Transaction.COLUMN_NAME_TRANSACTION_ID + " DESC";
 
-        Cursor cursor = db.query(
-                SimpleExpenseManagerContract.Transaction.TABLE_NAME,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
+        Cursor cursor;
+
+        if (limit == 0){
+            cursor = db.query(
+                    SimpleExpenseManagerContract.Transaction.TABLE_NAME,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    sortOrder
+            );
+        }else{
+            String strLimit = String.valueOf(limit);
+            cursor = db.query(
+                    SimpleExpenseManagerContract.Transaction.TABLE_NAME,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    sortOrder,
+                    strLimit
+            );
+        }
+
+
 
         while(cursor.moveToNext()) {
             String strDate = cursor.getString(
@@ -70,49 +127,5 @@ public class DBTransactionDAO implements TransactionDAO {
             transactions.add(transaction);
         }
         cursor.close();
-    }
-
-    @Override
-    public void logTransaction(Date date, String accountNo, ExpenseType expenseType, double amount) {
-        Transaction transaction = new Transaction(date, accountNo, expenseType, amount);
-        transactions.add(transaction);
-
-        //Insert to the database
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String strDate = dateFormat.format(date);
-
-        String strExpenseType;
-        if (expenseType == ExpenseType.EXPENSE){
-            strExpenseType = "expense";
-        }else{
-            strExpenseType = "income";
-        }
-
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-        //create values for inserting
-        ContentValues values = new ContentValues();
-        values.put(SimpleExpenseManagerContract.Transaction.COLUMN_NAME_DATE, strDate);
-        values.put(SimpleExpenseManagerContract.Transaction.COLUMN_NAME_ACCOUNT_NO, accountNo);
-        values.put(SimpleExpenseManagerContract.Transaction.COLUMN_NAME_EXPENSE_TYPE, strExpenseType);
-        values.put(SimpleExpenseManagerContract.Transaction.COLUMN_NAME_AMOUNT, amount);
-
-        db.insert(SimpleExpenseManagerContract.Transaction.TABLE_NAME, null, values);
-    }
-
-    @Override
-    public List<Transaction> getAllTransactionLogs() {
-        return transactions;
-    }
-
-    @Override
-    public List<Transaction> getPaginatedTransactionLogs(int limit) {
-        int size = transactions.size();
-        if (size <= limit) {
-            return transactions;
-        }
-        // return the last <code>limit</code> number of transaction logs
-        return transactions.subList(size - limit, size);
     }
 }
